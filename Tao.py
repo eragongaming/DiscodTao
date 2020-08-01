@@ -105,7 +105,7 @@ async def save(ctx):
 
 @bot.event
 async def on_message(message):
-    global preparedu
+    global prepared
     auth=str(message.author.id)
     con=message.content
     print(unhinged)
