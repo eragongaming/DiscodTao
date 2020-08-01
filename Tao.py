@@ -27,6 +27,12 @@ prepared=[]
 #current campaigns
 campaigns=['unhinged','hunt','control']
 
+#stores last 1000 message data in acache
+acache = []
+for x in bot.cached_messages:
+    acache.append(x)
+
+
 #Function that resets lists each time campaign starts
 def reset():
     global prepared
@@ -39,18 +45,19 @@ def reset():
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
-    await ctx.send('Tao has returned from training.')
+    channel=bot.get_channel(566459563319099403)
+    #await channel.send('Tao has returned from training.')
 
 
 #when someone types it checks the message
-@bot.command(name='start', help='Begins determining who is present')
+@bot.command(name='start', help='Takes a roll call')
 async def start_campaign(ctx):
     global initial
     await ctx.send('Please type anything to indicate your presence')
     initial.insert(0,1)
 
 
-@bot.command(name='complete', help='Stops accepting new people, include campaign name')
+@bot.command(name='complete', help='Used after start, ends roll call. Ex. (complete campaign)')
 async def end_campaign(ctx):
     con = str(ctx.message.content)
 
@@ -78,11 +85,10 @@ async def end_campaign(ctx):
     reset()
 
 
-@bot.command(name='join', help='Allows a user to join a campaign, put the name of the campaign after')
+@bot.command(name='join', help='To join a campaign. Ex. (join campaign)')
 async def join(ctx):
     auth=str(ctx.message.author.id)
     con=str(ctx.message.content)
-
 
     if 'unhinged' in con and auth not in unhinged:
         unhinged.append(auth)
@@ -100,7 +106,8 @@ async def join(ctx):
     elif 'control' in con:
         await ctx.send('You are already in the campaign.')
 
-@bot.command(name='leave', help='Allows a user to leave a campaign, put the name of the campaign after')
+
+@bot.command(name='leave', help='To leave a campaign. Ex.(leave campaign)')
 async def leave(ctx):
     auth=str(ctx.message.author.id)
     con=str(ctx.message.content)
@@ -122,7 +129,7 @@ async def leave(ctx):
         await ctx.send('You are not in the campaign.')
 
 
-@bot.command(name='save', help='Saves an updated list of players before closing tao')
+@bot.command(name='save', help='Saves player data and shuts down')
 async def save(ctx):
     unfilew = open('unhinged', 'w')
     huntfilew = open('hunt', 'w')
@@ -135,9 +142,10 @@ async def save(ctx):
         controlfilew.write(x+'\n')
     await ctx.send('Player data has been saved')
     await ctx.send('Tao is leaving to train.')
+    await bot.logout()
 
 
-@bot.command(name='players', help='Check the players in a campaign')
+@bot.command(name='players', help='Check the players in a campaign. Ex.(players campaign)')
 async def players(ctx):
     con=str(ctx.message.content)
     await ctx.send('These players are in the campaign: ')
@@ -161,16 +169,24 @@ async def players(ctx):
             await ctx.send(str(bot.get_user(int(x))))
 
 
+@bot.command(name='popular', help='Gives the most and least popular person')
+async def bestperson(ctx):
+    people=bot.users
+    await ctx.send('The most popular person is: '+str(random.choice(people)))
+    await ctx.send('The least popular person is: ' + str(random.choice(people)))
+
+
 @bot.event
 async def on_message(message):
     global prepared
     auth=str(message.author.id)
     con=message.content
-    print(unhinged)
 
     if (auth in unhinged) and initial[0]==1:
         prepared.append(auth)
 
+    if con.lower()=='thanks tao' or con=='thank you tao' or con=='ty tao' or con=='thanks so much tao':
+        await message.channel.send("You are welcome, it's my duty")
 
     if con=='wisdom':
         ninja = ['No one saves us but ourselves. No one can and no one may. We ourselves must walk the path.',
