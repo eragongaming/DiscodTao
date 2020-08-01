@@ -1,34 +1,36 @@
 import os
 import random
-
 from discord.ext import commands
 
+# Assigning id's and bot object
 TOKEN = os.environ['TOKEN']
 GUILD = os.environ['GUILD']
 bot = commands.Bot(command_prefix='tao ')
-
 
 # Opening the datafiles with player data
 unhinged_file_r = open('unhinged', 'r')
 hunt_file_r = open('hunt', 'r')
 control_file_r = open('control', 'r')
 
-# reading player data
+# Reading player data (stored as one id per line)
 unhinged = unhinged_file_r.read().splitlines()
 hunt = hunt_file_r.read().splitlines()
 control = control_file_r.read().splitlines()
+
+# Closing player data files
 unhinged_file_r.close()
 hunt_file_r.close()
 control_file_r.close()
 
-# preparing variables to track tardiness
+# Preparing variables to track tardiness
+# (initial is for startup, prepared for storing list of players)
 initial = [0]
 prepared = []
 
-# current campaigns
+# Current campaigns
 campaigns = ['unhinged', 'hunt', 'control']
 
-# stores last 1000 message data in a_cache
+# Stores last 1000 message data in a_cache
 a_cache = []
 for x in bot.cached_messages:
     a_cache.append(x)
@@ -42,6 +44,7 @@ def reset():
     initial[:] = [0]
 
 
+# Posts message to log when bot ready
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
@@ -49,7 +52,7 @@ async def on_ready():
     # await channel.send('Tao has returned from training.')
 
 
-# when someone types it checks the message
+# After called, starts tracking who speaks in discord
 @bot.command(name='start', help='Takes a roll call')
 async def start_campaign(ctx):
     global initial
@@ -57,6 +60,9 @@ async def start_campaign(ctx):
     initial.insert(0, 1)
 
 
+# Stops tracking who speaks in discord
+# Compares list of who spoke to given campaign players
+# If someone did not speak, posts a message mentioning them
 @bot.command(name='complete', help='Used after start, ends roll call. Ex. (complete campaign)')
 async def end_campaign(ctx):
     con = str(ctx.message.content)
@@ -85,6 +91,7 @@ async def end_campaign(ctx):
     reset()
 
 
+# Allows a user to join a campaign
 @bot.command(name='join', help='To join a campaign. Ex. (join campaign)')
 async def join(ctx):
     auth = str(ctx.message.author.id)
@@ -107,6 +114,7 @@ async def join(ctx):
         await ctx.send('You are already in the campaign.')
 
 
+# Lets a user leave a campaign
 @bot.command(name='leave', help='To leave a campaign. Ex.(leave campaign)')
 async def leave(ctx):
     auth = str(ctx.message.author.id)
@@ -129,6 +137,7 @@ async def leave(ctx):
         await ctx.send('You are not in the campaign.')
 
 
+# Saves the player data and shuts down the bot
 @bot.command(name='save', help='Saves player data and shuts down')
 async def save(ctx):
     unhinged_file_w = open('unhinged', 'w')
@@ -145,6 +154,7 @@ async def save(ctx):
     await bot.logout()
 
 
+# Allows users to see which players are in the campaigns
 @bot.command(name='players', help='Check the players in a campaign. Ex.(players campaign)')
 async def players(ctx):
     con = str(ctx.message.content)
@@ -163,6 +173,7 @@ async def players(ctx):
             await ctx.send(str(bot.get_user(int(person_id))))
 
 
+# Randomly chooses users as the most or least popular person
 @bot.command(name='popular', help='Gives the most and least popular person')
 async def best_person(ctx):
     people = bot.users
@@ -170,18 +181,22 @@ async def best_person(ctx):
     await ctx.send('The least popular person is: ' + str(random.choice(people)))
 
 
+# Examines all messages
 @bot.event
 async def on_message(message):
     global prepared
     auth = str(message.author.id)
     con = message.content
 
+    # Used in conjunction with start to track who speaks
     if (auth in unhinged) and initial[0] == 1:
         prepared.append(auth)
 
+    # Responds to people thanking the bot
     if con.lower() == 'thanks tao' or con == 'thank you tao' or con == 'ty tao' or con == 'thanks so much tao':
         await message.channel.send("You are welcome, it's my duty")
 
+    # Gives wisdom when people say wisdom
     if con == 'wisdom':
         ninja = ['No one saves us but ourselves. No one can and no one may. We ourselves must walk the path.',
                  'Three things cannot be long hidden: the sun, the moon, and the truth.',
@@ -189,7 +204,9 @@ async def on_message(message):
         response = random.choice(ninja)
         await message.channel.send(response)
 
+    # Allows messages to eventually reach commands
     await bot.process_commands(message)
 
 
+# Initializes the bot object
 bot.run(TOKEN)
