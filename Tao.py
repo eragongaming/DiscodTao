@@ -17,6 +17,35 @@ def reset():
     prepared[:]=[]
     initial[:]=[]
 
+
+def unhinged_campaign(auth,con):
+    global initial
+    global prepared
+
+    if con=='unhinged starting':
+        await message.channel.send('Please type anything to indicate your presence')
+        initial.append(1)
+
+    if (auth in unhinged) and initial[0]==1:
+        prepared.append(auth)
+
+    if con=='unhinged complete':
+        await message.channel.send('Roll call has ended for Unhinged')
+        for x in unhinged:
+            if x not in prepared:
+                await message.channel.send('The following player is not prepared: '+str(x))
+        reset()
+
+
+def wis(con):
+    if content=='wisdom':
+        ninja = ['No one saves us but ourselves. No one can and no one may. We ourselves must walk the path.',
+                 'Three things cannot be long hidden: the sun, the moon, and the truth.',
+                 'The mind is everything. What you think you become.']
+        response=random.choice(ninja)
+        await message.channel.send(response)
+
+
 #makes a console message about when bot is ready
 @client.event
 async def on_ready():
@@ -30,15 +59,21 @@ async def on_member_join(member):
         f"It's time to begin your training {member.name}, welcome to the den!"
     )
 
-#when someone types wisdom, it gives wisdom
+#when someone types it checks the message
 @client.event
 async def on_message(message):
     if message.author==client.user:
         return
-    ninja=['No one saves us but ourselves. No one can and no one may. We ourselves must walk the path.','Three things cannot be long hidden: the sun, the moon, and the truth.','The mind is everything. What you think you become.']
-    if message.content=='wisdom':
-        response=random.choice(ninja)
-        await message.channel.send(response)
+
+    strauth=str(message.author)
+    content=message.content
+
+    wis(content)
+    unhinged_campaign(strauth,content)
+
+
+
+
 
 #temporarily disabled, says something everytime someone talks
 #@client.event
@@ -49,35 +84,4 @@ async def on_message(message):
     #if str(message.author) == 'Turaku#5395':
      #   await message.channel.send('You are the chosen one!')
 
-#
-@client.event
-async def on_message(message):
-    if message.author==client.user:
-        return
-    global initial
-    if str(message.content)=='unhinged starting':
-        await message.channel.send('Please type anything to indicate your presence')
-        initial.append(1)
-
-@client.event
-async def on_message(message):
-    if message.author==client.user:
-        return
-    global prepared
-    for x in unhinged:
-        if str(message.author)==x and initial[0]==1:
-            prepared.append(x)
-
-
-@client.event
-async def on_message(message):
-    if message.author==client.user:
-        return
-    if str(message.content)=='unhinged complete':
-        await message.channel.send('Roll call has ended for Unhinged')
-        for x in unhinged:
-            if x not in prepared:
-                await message.channel.send('The following player is not prepared: '+str(x))
-
-        reset()
 client.run(TOKEN)
