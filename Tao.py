@@ -39,6 +39,7 @@ def reset():
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
+    await ctx.send('Tao has returned from training.')
 
 
 #when someone types it checks the message
@@ -133,6 +134,7 @@ async def save(ctx):
     for x in control:
         controlfilew.write(x+'\n')
     await ctx.send('Player data has been saved')
+    await ctx.send('Tao is leaving to train.')
 
 
 @bot.command(name='players', help='Check the players in a campaign')
