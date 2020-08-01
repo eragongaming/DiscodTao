@@ -1,35 +1,36 @@
 import os
 import discord
 import random
-TOKEN='NzM4OTAwMjc1MTU4NTgxMzA5.XySogQ.BxMjvjk-Hdtux5iuTCos8fsq_lk'
-GUILD="Feeder's Den"
+TOKEN=os.environ['TOKEN']
+GUILD=os.environ['GUILD']
 client=discord.Client()
 
+#Preparing lists to determine who is present
 unhinged=('Little Haowie#3217','suCCC#1194','Baecon#6277','Kayo Hinazuki#2531','boo radley#2121')
 initial=[]
 prepared=[]
 
-
+#Function that resets lists each time campaign starts
 def reset():
     global prepared
     global initial
     prepared[:]=[]
     initial[:]=[]
 
-
+#makes a console message about when bot is ready
 @client.event
 async def on_ready():
     guild=discord.utils.get(client.guilds, name=GUILD)
     print(f'{client.user} is connected to the following guild: {guild.name}')
 
+#sends a message in the channel when a user joins
+client.event
+async def on_member_join(member):
+    await message.channel.send(
+        f"It's time to begin your training {member.name}, welcome to the den!"
+    )
 
-#client.event
-#async def on_member_join(member):
-#    await message.channel.send(
-#        f"It's time to begin your training {member.name}, welcome to the den!"
-#    )
-
-
+#when someone types wisdom, it gives wisdom
 @client.event
 async def on_message(message):
     if message.author==client.user:
@@ -39,16 +40,16 @@ async def on_message(message):
         response=random.choice(ninja)
         await message.channel.send(response)
 
-
-@client.event
-async def on_message(message):
-    guild = discord.utils.get(client.guilds, name=GUILD)
-    if message.author == client.user:
-        return
+#temporarily disabled, says something everytime someone talks
+#@client.event
+#async def on_message(message):
+#    guild = discord.utils.get(client.guilds, name=GUILD)
+#    if message.author == client.user:
+#        return
     #if str(message.author) == 'Turaku#5395':
      #   await message.channel.send('You are the chosen one!')
 
-
+#
 @client.event
 async def on_message(message):
     if message.author==client.user:
