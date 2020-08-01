@@ -6,15 +6,25 @@ TOKEN=os.environ['TOKEN']
 GUILD=os.environ['GUILD']
 bot=commands.Bot(command_prefix='tao ')
 
-#Preparing lists to determine who is present
+
+#Opening the datafiles with player data
 unfiler=open('unhinged','r')
 huntfiler=open('hunt','r')
 controlfiler=open('control','r')
-unhinged=unfiler.readlines()
-hunt=huntfiler.readlines()
-control=controlfiler.readlines()
+
+#reading player data
+unhinged=unfiler.read().splitlines()
+hunt=huntfiler.read().splitlines()
+control=controlfiler.read().splitlines()
+unfiler.close()
+huntfiler.close()
+controlfiler.close()
+
+#preparing variables to track tardiness
 initial=[0]
 prepared=[]
+
+#current campaigns
 campaigns=['unhinged','hunt','control']
 
 #Function that resets lists each time campaign starts
@@ -32,21 +42,40 @@ async def on_ready():
 
 
 #when someone types it checks the message
-@bot.command(name='start_unhinged', help='Begins determining who is present')
-async def s_unhinged_campaign(ctx):
+@bot.command(name='start', help='Begins determining who is present')
+async def start_campaign(ctx):
     global initial
     await ctx.send('Please type anything to indicate your presence')
     initial.insert(0,1)
 
 
-@bot.command(name='unhinged_complete', help='Stops accepting new people')
-async def e_unhinged_campaign(ctx):
-    await ctx.send('Roll call has ended for Unhinged')
-    for x in unhinged:
-        if x not in prepared:
-            ids='<@{}>'.format(x)
-            await ctx.send('The following player is not prepared: {} laugh at them.'.format(ids))
+@bot.command(name='complete', help='Stops accepting new people, include campaign name')
+async def end_campaign(ctx):
+    con = str(ctx.message.content)
+
+    if 'unhinged' in con:
+        await ctx.send('Roll call has ended for unhinged')
+        for x in unhinged:
+            if x not in prepared:
+                ids = '<@{}>'.format(x)
+                await ctx.send('The following player is not prepared: {} laugh at them.'.format(ids))
+
+    if 'hunt' in con:
+        await ctx.send('Roll call has ended for hunt')
+        for x in hunt:
+            if x not in prepared:
+                ids = '<@{}>'.format(x)
+                await ctx.send('The following player is not prepared: {} laugh at them.'.format(ids))
+
+    if 'control' in con:
+        await ctx.send('Roll call has ended for control')
+        for x in control:
+            if x not in prepared:
+                ids = '<@{}>'.format(x)
+                await ctx.send('The following player is not prepared: {} laugh at them.'.format(ids))
+
     reset()
+
 
 @bot.command(name='join', help='Allows a user to join a campaign, put the name of the campaign after')
 async def join(ctx):
@@ -97,10 +126,37 @@ async def save(ctx):
     unfilew = open('unhinged', 'w')
     huntfilew = open('hunt', 'w')
     controlfilew = open('control', 'w')
-    unfilew.writelines(unhinged)
-    huntfilew.writelines(hunt)
-    controlfilew.writelines(control)
+    for x in unhinged:
+        unfilew.write(x+'\n')
+    for x in hunt:
+        huntfilew.write(x+'\n')
+    for x in control:
+        controlfilew.write(x+'\n')
     await ctx.send('Player data has been saved')
+
+
+@bot.command(name='players', help='Check the players in a campaign')
+async def players(ctx):
+    con=str(ctx.message.content)
+    await ctx.send('These players are in the campaign: ')
+
+    if 'unhinged' in con:
+        for x in unhinged:
+            player=int(x)
+            print(bot.get_user(int(x)))
+            await ctx.send(str(bot.get_user(int(x))))
+
+    if 'hunt' in con:
+        for x in hunt:
+            player=int(x)
+            print(bot.get_user(int(x)))
+            await ctx.send(str(bot.get_user(int(x))))
+
+    if 'control' in con:
+        for x in control:
+            player=int(x)
+            print(bot.get_user(int(x)))
+            await ctx.send(str(bot.get_user(int(x))))
 
 
 @bot.event
