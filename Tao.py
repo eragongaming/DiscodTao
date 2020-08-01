@@ -7,9 +7,6 @@ GUILD=os.environ['GUILD']
 bot=commands.Bot(command_prefix='tao ')
 
 #Preparing lists to determine who is present
-unfilew=open('unhinged','w')
-huntfilew=open('hunt','w')
-controlfilew=open('control','w')
 unfiler=open('unhinged','r')
 huntfiler=open('hunt','r')
 controlfiler=open('control','r')
@@ -25,7 +22,6 @@ def reset():
     global prepared
     global initial
     prepared[:]=[]
-    preparedid[:]=[]
     initial[:]=[0]
 
 
@@ -48,10 +44,9 @@ async def e_unhinged_campaign(ctx):
     await ctx.send('Roll call has ended for Unhinged')
     for x in unhinged:
         if x not in prepared:
-            id='<@{}>'.format(x)
-            await ctx.send('The following player is not prepared: {} laugh at them.'.format(id))
+            ids='<@{}>'.format(x)
+            await ctx.send('The following player is not prepared: {} laugh at them.'.format(ids))
     reset()
-
 
 @bot.command(name='join', help='Allows a user to join a campaign, put the name of the campaign after')
 async def join(ctx):
@@ -82,24 +77,30 @@ async def leave(ctx):
 
     if 'unhinged' in con and auth in unhinged:
         unhinged.remove(auth)
+        await ctx.send('You have been removed from unhinged')
     elif 'unhinged' in con:
         await ctx.send('You are not in the campaign.')
     if 'hunt' in con and auth in hunt:
         hunt.remove(auth)
+        await ctx.send('You have been removed from hunt')
     elif 'hunt' in con:
         await ctx.send('You are not in the campaign.')
     if 'control' in con and auth in control:
         control.remove(auth)
+        await ctx.send('You have been removed from control')
     elif 'control' in con:
         await ctx.send('You are not in the campaign.')
 
 
 @bot.command(name='save', help='Saves an updated list of players before closing tao')
 async def save(ctx):
+    unfilew = open('unhinged', 'w')
+    huntfilew = open('hunt', 'w')
+    controlfilew = open('control', 'w')
     unfilew.writelines(unhinged)
     huntfilew.writelines(hunt)
     controlfilew.writelines(control)
-    ctx.send('Player data has been saved')
+    await ctx.send('Player data has been saved')
 
 
 @bot.event
