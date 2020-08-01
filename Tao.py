@@ -4,13 +4,21 @@ import random
 from discord.ext import commands
 TOKEN=os.environ['TOKEN']
 GUILD=os.environ['GUILD']
-bot=commands.Bot(command_prefix='TAO!')
+bot=commands.Bot(command_prefix='tao ')
 
 #Preparing lists to determine who is present
-unhinged=('Little Haowie#3217','suCCC#1194','Baecon#6277','Kayo Hinazuki#2531','boo radley#2121')
+unfilew=open('unhinged','w')
+huntfilew=open('hunt','w')
+controlfilew=open('control','w')
+unfiler=open('unhinged','r')
+huntfiler=open('hunt','r')
+controlfiler=open('control','r')
+unhinged=unfiler.readlines()
+hunt=huntfiler.readlines()
+control=controlfiler.readlines()
 initial=[0]
 prepared=[]
-preparedid=[]
+campaigns=['unhinged','hunt','control']
 
 #Function that resets lists each time campaign starts
 def reset():
@@ -40,35 +48,69 @@ async def e_unhinged_campaign(ctx):
     await ctx.send('Roll call has ended for Unhinged')
     for x in unhinged:
         if x not in prepared:
-            await ctx.send('The following player is not prepared: '+str(x)+' laugh at them.')
+            id='<@{}>'.format(x)
+            await ctx.send('The following player is not prepared: {} laugh at them.'.format(id))
     reset()
 
 
 @bot.command(name='join', help='Allows a user to join a campaign, put the name of the campaign after')
 async def join(ctx):
-    print(ctx.message.content)
-    if ctx.message.content=='TAO! join unhinged' and ctx.message.author not in unhinged:
-        unhinged.append(str(ctx.message.author))
-        print(unhinged)
-    elif ctx.message.content=='TAO! join unhinged':
-        await ctx.send('You are already in the campaign.')
+    auth=str(ctx.message.author.id)
+    con=str(ctx.message.content)
 
+
+    if 'unhinged' in con and auth not in unhinged:
+        unhinged.append(auth)
+        await ctx.send('You have joined unhinged')
+    elif 'unhinged' in con:
+        await ctx.send('You are already in the campaign.')
+    if 'hunt' in con and auth not in hunt:
+        hunt.append(auth)
+        await ctx.send('You have joined hunt')
+    elif 'hunt' in con:
+        await ctx.send('You are already in the campaign.')
+    if 'control' in con and auth not in control:
+        control.append(auth)
+        await ctx.send('You have joined control')
+    elif 'control' in con:
+        await ctx.send('You are already in the campaign.')
 
 @bot.command(name='leave', help='Allows a user to leave a campaign, put the name of the campaign after')
 async def leave(ctx):
-    if ctx.message.content=='unhinged' and ctx.message.author in unhinged:
-        unhinged.append(str(ctx.message.author))
+    auth=str(ctx.message.author.id)
+    con=str(ctx.message.content)
+
+    if 'unhinged' in con and auth in unhinged:
+        unhinged.remove(auth)
+    elif 'unhinged' in con:
+        await ctx.send('You are not in the campaign.')
+    if 'hunt' in con and auth in hunt:
+        hunt.remove(auth)
+    elif 'hunt' in con:
+        await ctx.send('You are not in the campaign.')
+    if 'control' in con and auth in control:
+        control.remove(auth)
+    elif 'control' in con:
+        await ctx.send('You are not in the campaign.')
+
+
+@bot.command(name='save', help='Saves an updated list of players before closing tao')
+async def save(ctx):
+    unfilew.writelines(unhinged)
+    huntfilew.writelines(hunt)
+    controlfilew.writelines(control)
+    ctx.send('Player data has been saved')
 
 
 @bot.event
 async def on_message(message):
     global preparedu
-    auth=str(message.author)
+    auth=str(message.author.id)
     con=message.content
+    print(unhinged)
 
     if (auth in unhinged) and initial[0]==1:
         prepared.append(auth)
-        preparedid.append(message.author.id)
 
 
     if con=='wisdom':
