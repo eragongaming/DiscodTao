@@ -1,5 +1,6 @@
 import os
 import random
+import discord
 from discord.ext import commands
 
 # Assigning id's and bot object
@@ -42,6 +43,21 @@ def reset():
     global initial
     prepared[:] = []
     initial[:] = [0]
+
+
+# bans a user with a reason
+@bot.command(name='kill', help='Ban a user')
+@commands.has_permissions(administrator=True)
+async def ban(ctx, member: discord.User = None, reason=None):
+    if member is None or member == ctx.message.author:
+        await ctx.channel.send("I cannot kill you")
+        return
+    if reason is None:
+        reason = "For defiling these lands"
+    message = f"You have been banned from {ctx.guild.name} for {reason}"
+    await member.send(message)
+    await ctx.guild.ban(member, reason=reason)
+    await ctx.channel.send(f"I have slain {member}.")
 
 
 # Posts message to log when bot ready
