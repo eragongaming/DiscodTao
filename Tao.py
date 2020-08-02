@@ -95,27 +95,27 @@ May be used for corrections in format (log20 @user correction number''')
 @commands.has_role('Dungeoneer')
 async def nat20log(ctx, member: discord.User = None):
     auth = str(ctx.message.author)
-    memb=str(member)
+    member_str = str(member)
     if 'correction' in ctx.message.content:
         for character in ctx.message.content:
             if character.isnumeric():
                 if member is None or member == ctx.message.author:
-                    nat20[auth]-=int(character)
+                    nat20[auth] -= int(character)
                     await ctx.send(f"The count for {ctx.message.author} is now {nat20[auth]}.")
                     return
                 else:
-                    nat20[memb]-=int(character)
-                    await ctx.send(f"The count for {member} is now {nat20[memb]}.")
+                    nat20[member_str] -= int(character)
+                    await ctx.send(f"The count for {member} is now {nat20[member_str]}.")
                     return
     if member is None or member == ctx.message.author:
         if auth not in nat20:
-            nat20[auth]=0
-        nat20[auth]+=1
+            nat20[auth] = 0
+        nat20[auth] += 1
         return
     else:
-        if memb not in nat20:
-            nat20[memb]=0
-        nat20[memb]+=1
+        if member_str not in nat20:
+            nat20[member_str] = 0
+        nat20[member_str] += 1
 
 
 # Shows current nat20 log
@@ -123,7 +123,7 @@ async def nat20log(ctx, member: discord.User = None):
 @commands.has_role('Dungeoneer')
 async def nat20log(ctx):
     await ctx.send("Here is a list of people and the amount of natural 20's they have got: ")
-    temp_log=[]
+    temp_log = []
     for key in nat20:
         temp_log.append((key, nat20[key]))
     for pair in temp_log:
