@@ -3,9 +3,10 @@ import random
 import discord
 from discord.ext import commands
 import shelve
-from googlesearch import search
+# from googlesearch import search
+# import ffmpeg
 import asyncio
-import ffmpeg
+from discord.ext.commands import CommandNotFound
 
 
 # Assigning id's and bot object
@@ -32,7 +33,7 @@ control_file_r.close()
 nat20 = shelve.open('nat20.txt', flag='c', writeback=True)
 
 # Data management for quotes
-quote_file_r = open('quote','r')
+quote_file_r = open('quote', 'r')
 quotes = quote_file_r.read().splitlines()
 quote_file_r.close()
 
@@ -48,11 +49,6 @@ play_next_song = asyncio.Event()
 # Current campaigns
 campaigns = ['unhinged', 'hunt', 'control']
 
-# Stores last 1000 message data in a_cache
-a_cache = []
-for x in bot.cached_messages:
-    a_cache.append(x)
-
 
 # Function that resets lists each time campaign starts
 def reset():
@@ -63,13 +59,13 @@ def reset():
 
 
 # Posts message to log when bot ready
-# @bot.event
-# async def on_ready():
-#     print(f'{bot.user.name} has connected to Discord!')
-#     # channel=bot.get_channel(566459563319099403)
-#     # await channel.send('Tao has returned from training.')
-#
-#
+@bot.event
+async def on_ready():
+    print(f'{bot.user.name} has connected to Discord!')
+    # channel=bot.get_channel(566459563319099403)
+    # await channel.send('Tao has returned from training.')
+
+
 # # Start Music
 # async def audio_player_task():
 #     while True:
@@ -171,7 +167,6 @@ async def nat20log(ctx):
 @bot.command(name='quote', help="Saves a quote")
 @commands.has_role('Dungeoneer')
 async def save_quotes(ctx, member: discord.User = None):
-    auth=str(ctx.message.author)
     content = ctx.message.content
     if member is None:
         await ctx.send('Please mention a user.')
@@ -336,19 +331,45 @@ async def best_person(ctx):
     await ctx.send('The least popular person is: ' + str(random.choice(people)))
 
 
+@bot.command(name='chat_log', help='Gives the amount people have chatted since the bot started')
+async def chatters(ctx):
+    chat_message_authors = {}
+    chat_list = []
+    for old_msg in bot.cached_messages:
+        if str(old_msg.author) not in chat_message_authors:
+            chat_message_authors[str(old_msg.author)] = 0
+        chat_message_authors[str(old_msg.author)] += 1
+    for chatter in chat_message_authors:
+        chat_list.append([f"{chatter} has spoken {chat_message_authors[chatter]} times", chat_message_authors[chatter]])
+    chat_lists = sorted(chat_list, reverse=True, key=lambda s: s[1])
+    await ctx.send('This is the current tally: ')
+    for pair in chat_lists:
+        await ctx.send(pair[0])
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, CommandNotFound):
+        await ctx.send('That is not something I have trained for')
+        return
+    raise error
+
+
 # Examines all messages
 @bot.event
 async def on_message(message):
     global prepared
     auth = str(message.author.id)
     con = message.content
+    con = con.lower()
 
     # Used in conjunction with start to track who speaks
     if (auth in unhinged) and initial[0] == 1:
         prepared.append(auth)
 
     # Responds to people thanking the bot
-    if con.lower() == 'thanks tao' or con == 'thank you tao' or con == 'ty tao' or con == 'thanks so much tao':
+    if (con == 'thanks tao' or con == 'thank you tao' or con == 'ty tao'
+            or con == 'thanks so much tao' or ('thank' in con and 'tao' in con)):
         await message.channel.send("You are welcome, it's my duty")
 
     # Gives wisdom when people say wisdom
