@@ -3,6 +3,9 @@ import random
 import discord
 from discord.ext import commands
 import shelve
+from googlesearch import search
+import asyncio
+import ffmpeg
 
 
 # Assigning id's and bot object
@@ -28,10 +31,19 @@ control_file_r.close()
 # Data management for nat20 log
 nat20 = shelve.open('nat20.txt', flag='c', writeback=True)
 
+# Data management for quotes
+quote_file_r = open('quote','r')
+quotes = quote_file_r.read().splitlines()
+quote_file_r.close()
+
 # Preparing variables to track tardiness
 # (initial is for startup, prepared for storing list of players)
 initial = [0]
 prepared = []
+
+# Music variables
+songs = asyncio.Queue()
+play_next_song = asyncio.Event()
 
 # Current campaigns
 campaigns = ['unhinged', 'hunt', 'control']
@@ -51,11 +63,36 @@ def reset():
 
 
 # Posts message to log when bot ready
-@bot.event
-async def on_ready():
-    print(f'{bot.user.name} has connected to Discord!')
-    # channel=bot.get_channel(566459563319099403)
-    # await channel.send('Tao has returned from training.')
+# @bot.event
+# async def on_ready():
+#     print(f'{bot.user.name} has connected to Discord!')
+#     # channel=bot.get_channel(566459563319099403)
+#     # await channel.send('Tao has returned from training.')
+#
+#
+# # Start Music
+# async def audio_player_task():
+#     while True:
+#         play_next_song.clear()
+#         current = await songs.get()
+#         current.start()
+#         await play_next_song.wait()
+#
+#
+# def toggle_next():
+#     bot.loop.call_soon_threadsafe(play_next_song.set)
+#
+#
+# @bot.command(name='play', help='Play a song')
+# async def music_join(ctx,url):
+#     audio=discord.AudioSource
+#     channel=ctx.author.voice.channel
+#     ffmpegAudio(audio)
+#     if bot.user not in bot.voice_clients:
+#         voice = await channel.connect()
+#     player = await voice.play(source=audio.read.(url), after=toggle_next)
+#     await songs.put(player)
+# End Music
 
 
 # Bans a user with a reason
@@ -128,6 +165,37 @@ async def nat20log(ctx):
         temp_log.append((key, nat20[key]))
     for pair in temp_log:
         await ctx.send(f"{pair[0]} has rolled {pair[1]} natural 20's.")
+
+
+# Keeps quotes of people
+@bot.command(name='quote', help="Saves a quote")
+@commands.has_role('Dungeoneer')
+async def save_quotes(ctx, member: discord.User = None):
+    auth=str(ctx.message.author)
+    content = ctx.message.content
+    if member is None:
+        await ctx.send('Please mention a user.')
+        return
+    temp_quote = content.split()
+    temp_quote = temp_quote[3:]
+    temp_quote = " ".join(temp_quote)
+    quotes.append(f"{member} said: '{temp_quote}'")
+    await ctx.send('A quote was added for {}'.format(member))
+
+
+# Shows a random quote from a user
+@bot.command(name='show', help="Shows a random quote from a user. Ex.(show @user). if no user, picks from all.")
+@commands.has_role('Dungeoneer')
+async def quote_log(ctx, member: discord.User = None):
+    member_str = str(member)
+    if member is None:
+        await ctx.send(random.choice(quotes))
+        return
+    single_user_temp_quotes = [quote for quote in quotes if member_str in quote]
+    if not single_user_temp_quotes:
+        await ctx.send(f"{member} does not have any quotes")
+        return
+    await ctx.send(random.choice(single_user_temp_quotes))
 
 
 # After called, starts tracking who speaks in discord
@@ -221,12 +289,19 @@ async def save(ctx):
     unhinged_file_w = open('unhinged', 'w')
     hunt_file_w = open('hunt', 'w')
     control_file_w = open('control', 'w')
+    quote_file_w = open('quote', 'w')
     for person_id in unhinged:
         unhinged_file_w.write(person_id+'\n')
     for person_id in hunt:
         hunt_file_w.write(person_id+'\n')
     for person_id in control:
         control_file_w.write(person_id+'\n')
+    for single_quote in quotes:
+        quote_file_w.write(single_quote+'\n')
+    unhinged_file_w.close()
+    hunt_file_w.close()
+    control_file_w.close()
+    quote_file_w.close()
     nat20.sync()
     nat20.close()
     await ctx.send('Player data has been saved')
