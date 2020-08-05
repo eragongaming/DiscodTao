@@ -6,6 +6,7 @@ import shelve
 # from googlesearch import search
 # import ffmpeg
 import asyncio
+import urllib.request
 from discord.ext.commands import CommandNotFound
 
 
@@ -62,8 +63,22 @@ def reset():
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
-    # channel=bot.get_channel(566459563319099403)
-    # await channel.send('Tao has returned from training.')
+    channel = bot.get_channel(665652455635288084)
+    await channel.send('Tao has returned from training.')
+
+
+@bot.command(name='img', help='Save or load an image, or show current log')
+async def img_storage(ctx, opt, name=None, url=None):
+    if opt == 'save':
+        await ctx.send('The image has been saved as {}'.format(name))
+        urllib.request.urlretrieve(url, 'Images/' + name + '.png')
+    if opt == 'load':
+        await ctx.send(file=discord.File('Images/' + name + '.png'))
+    if opt == 'log':
+        show_img = os.listdir('Images')
+        await ctx.send('These are the images currently saved: ')
+        for img in show_img:
+            await ctx.send(f"{img.strip('.png')}")
 
 
 # # Start Music
@@ -331,11 +346,14 @@ async def best_person(ctx):
     await ctx.send('The least popular person is: ' + str(random.choice(people)))
 
 
+# Shows amount people talk
 @bot.command(name='chat_log', help='Gives the amount people have chatted since the bot started')
 async def chatters(ctx):
     chat_message_authors = {}
     chat_list = []
     for old_msg in bot.cached_messages:
+        if old_msg.author == bot.user:
+            continue
         if str(old_msg.author) not in chat_message_authors:
             chat_message_authors[str(old_msg.author)] = 0
         chat_message_authors[str(old_msg.author)] += 1
