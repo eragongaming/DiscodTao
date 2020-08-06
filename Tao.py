@@ -8,6 +8,7 @@ import shelve
 import asyncio
 import urllib.request
 from discord.ext.commands import CommandNotFound
+import names
 
 
 # Assigning id's and bot object
@@ -67,6 +68,172 @@ async def on_ready():
     await channel.send('Tao has returned from training.')
 
 
+# RPG module
+@bot.command(name='rpg', help='RPG fun')
+async def send_dm(ctx, opt):
+
+    def mod(attribute_stat_f):
+        return (attribute_stat_f-10)//2
+
+    def prof_mod(lvl):
+        if lvl < 5:
+            return 2
+        if lvl < 9:
+            return 3
+        if lvl < 13:
+            return 4
+        if lvl < 17:
+            return 5
+        if lvl >= 17:
+            return 6
+
+    def encounter(lvl, dif):
+        monsters_small = {}
+        amount = random.randrange(1, 2 * lvl * dif)
+        effect = random.randrange(1, 101)
+        for monster_small in range(amount + 1):
+            monsters_small[monster_small] = [names.get_first_name(), random.randrange(3, 9) * lvl + dif,
+                                             random.randrange(6, 13) + lvl + dif]
+        if effect <= 5+(lvl * dif):
+            monsters_small['effect'] = True
+        else:
+            monsters_small['effect'] = False
+        return monsters_small
+
+    async def action(eff):
+        while character['health'] > 0:
+            choice = await ctx.send("Would you like to attack or run?")
+            choice = await bot.wait_for("message", check=(lambda s: s.author == ctx.message.author))
+            choice =  choice.content.lower()
+            if 'attack' in choice:
+                await ctx.send("Who would you like to attack?")
+                target = await bot.wait_for("message", check=(lambda s: s.author == ctx.message.author))
+                target = target.content
+                if target not in monsters:
+                    await ctx.send("That is not a monster, try again!")
+                    continue
+
+
+
+    if opt == 'create':
+        async def attribute_selection(num):
+            await ctx.send('Which stat would you like to assign {} to'.format(num))
+            choice = await bot.wait_for("message", check=(lambda s: s.author == ctx.message.author))
+            choice = choice.content.lower()
+            if choice not in character:
+                await ctx.send(f"{choice} is not a valid option, try again")
+                await attribute_selection(num)
+            elif character[choice] == 0:
+                character[choice] = num
+            else:
+                await ctx.send(f"{choice} is not a valid option, try again")
+                await attribute_selection(num)
+
+        if not os.path.isdir('Characters/'+str(ctx.message.author)):
+            os.mkdir('Characters/'+str(ctx.message.author))
+        character = shelve.open(f'Characters/'+str(ctx.message.author)+'/'+str(ctx.message.author) +
+                                f'.txt', flag='c', writeback=True)
+
+        await ctx.send("What is your character's name?")
+        temp_name = await bot.wait_for("message", check=(lambda s: s.author == ctx.message.author))
+        character['name'] = temp_name.content
+
+        character['level'] = 1
+        character['strength'] = 0
+        character['dexterity'] = 0
+        character['constitution'] = 0
+        character['intelligence'] = 0
+        character['wisdom'] = 0
+        character['charisma'] = 0
+        raw_stats = []
+
+        for random_num in range(6):
+            raw_stats.append(random.randrange(3, 19))
+
+        await ctx.send(f"Your six attribute rolls are: {raw_stats[0]}, {raw_stats[1]},"
+                       f" {raw_stats[2]}, {raw_stats[3]}, {raw_stats[4]}, {raw_stats[5]}")
+
+        await ctx.send("Would you like to randomly assign your stats?")
+        ran_stat_assign = await bot.wait_for("message")
+
+        if 'yes' in ran_stat_assign.content.lower():
+            zip_character = [x for x in character if x != 'level' and x != 'name']
+            combo = list(zip(zip_character, raw_stats))
+            for pair in combo:
+                character[pair[0]] = pair[1]
+        else:
+            await ctx.send(f"Select what your stats are assigned to from: strength, dexterity, constitution, "
+                           f"intelligence, wisdom, and charisma")
+            for random_num in raw_stats:
+                await attribute_selection(random_num)
+
+        character['health'] = random.randrange(4, 11)+mod(character['constitution'])
+        character['armor'] = 8+prof_mod(character['level'])+mod(character['dexterity'])
+
+        await ctx.send(f"These are your stats:")
+        output = ''
+        for stat in character:
+            output += f"Your {stat} is {character[stat]}\n"
+        await ctx.send(output)
+        character.sync()
+        character.close()
+
+    if opt == 'stats':
+        if not os.path.isdir('Characters/'+str(ctx.message.author)):
+            await ctx.send("You do not have a character, go make one!")
+            return
+        character = shelve.open(f'Characters/'+str(ctx.message.author)+'/'+str(ctx.message.author) +
+                                f'.txt', flag='c', writeback=True)
+        pairs = list(character.items())
+        output = ''
+        for pair in pairs:
+            output += f"Your {pair[0]} is {pair[1]}\n"
+        await ctx.send(output)
+        character.sync()
+        character.close()
+
+    if opt == 'fight':
+        if not os.path.isdir('Characters/'+str(ctx.message.author)):
+            await ctx.send("You do not have a character, go make one!")
+            return
+        character = shelve.open(f'Characters/'+str(ctx.message.author)+'/'+str(ctx.message.author) +
+                                f'.txt', flag='c', writeback=True)
+        await ctx.send("Enter a value 1-3 for the difficulty. your rewards will be scaled, but so will the monsters")
+        difficulty = await bot.wait_for("message", check=(lambda s: s.author == ctx.message.author))
+        difficulty = difficulty.content.lower()
+        difficulty = int(difficulty)
+        monsters = encounter(character['level'], difficulty)
+        output = ''
+        for monster in monsters:
+            if monster == 'effect':
+                effect = monsters[monster]
+                if monsters[monster]:
+                    await ctx.send("You cannot run this fight!")
+                    continue
+                else:
+                    continue
+            else:
+                output += f"{monsters[monster][0]} has appeared! " \
+                        f"HP: {monsters[monster][1]} AC: {monsters[monster][2]}\n"
+        await ctx.send(output)
+        await action(effect)
+
+
+
+
+
+
+# Allow users to DM others with bot
+@bot.command(name='dm', help='Send a DM through Tao')
+async def send_dm(ctx, member, msg):
+    member = member.strip("<@!")
+    member = member.strip(">")
+    member = bot.get_user(int(member))
+    await ctx.message.delete()
+    await member.send(msg)
+    await ctx.send('Message sent')
+
+
 @bot.command(name='img', help='Save or load an image, or show current log')
 async def img_storage(ctx, opt, name=None, url=None):
     if opt == 'save':
@@ -79,6 +246,9 @@ async def img_storage(ctx, opt, name=None, url=None):
         await ctx.send('These are the images currently saved: ')
         for img in show_img:
             await ctx.send(f"{img.strip('.png')}")
+    if opt == 'remove':
+        await ctx.send('{} has been removed'.format(name))
+        os.remove('Images/' + name + '.png')
 
 
 # # Start Music
@@ -391,12 +561,12 @@ async def on_message(message):
         await message.channel.send("You are welcome, it's my duty")
 
     # Gives wisdom when people say wisdom
-    if con == 'wisdom':
-        ninja = ['No one saves us but ourselves. No one can and no one may. We ourselves must walk the path.',
-                 'Three things cannot be long hidden: the sun, the moon, and the truth.',
-                 'The mind is everything. What you think you become.']
-        response = random.choice(ninja)
-        await message.channel.send(response)
+    # if con == 'wisdom':
+    #     ninja = ['No one saves us but ourselves. No one can and no one may. We ourselves must walk the path.',
+    #              'Three things cannot be long hidden: the sun, the moon, and the truth.',
+    #              'The mind is everything. What you think you become.']
+    #     response = random.choice(ninja)
+    #     await message.channel.send(response)
 
     # Allows messages to eventually reach commands
     await bot.process_commands(message)
