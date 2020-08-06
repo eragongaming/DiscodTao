@@ -237,8 +237,15 @@ async def send_dm(ctx, member, msg):
 @bot.command(name='img', help='Save or load an image, or show current log')
 async def img_storage(ctx, opt, name=None, url=None):
     if opt == 'save':
+        class AppURLopener(urllib.request.FancyURLopener):
+            version = "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, " \
+                      "like Gecko) Chrome/47.0.2526.69 Safari/537.36"
+
+        urllib._urlopener = AppURLopener()
+
+        urllib._urlopener.retrieve(url, 'Images/' + name + '.png')
         await ctx.send('The image has been saved as {}'.format(name))
-        urllib.request.urlretrieve(url, 'Images/' + name + '.png')
+        # urllib.request.urlretrieve(url, 'Images/' + name + '.png')
     if opt == 'load':
         await ctx.send(file=discord.File('Images/' + name + '.png'))
     if opt == 'log':
